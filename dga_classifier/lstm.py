@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 #encoding=utf-8
 
-
 """Train and test LSTM classifier"""
 import dga_classifier.data as data
 import numpy as np
@@ -60,34 +59,24 @@ def run(max_epoch=25, nfolds=10, batch_size=128):
 
         print("Train...")
         X_train, X_holdout, y_train, y_holdout = train_test_split(X_train, y_train, test_size=0.05)
-        best_iter = -1
-        best_auc = 0.0
-        out_data = {}
+        model.fit(
+            X_train, y_train,
+            batch_size=batch_size,
+            epochs=max_epoch,
+            validation_data=(X_holdout, y_holdout)
+        )
+        score, acc = model.evaluate(
+            X_holdout, y_holdout,
+            batch_size=batch_size
+        )
+        print('Test score:', score)
+        print('Test accuracy:', acc)
 
-        for ep in range(max_epoch):
-            model.fit(X_train, y_train, batch_size=batch_size, nb_epoch=1)
+        import datetime
+        model.save('lstm.{}.h5'.format(
+            datetime.datetime.now().strftime('%Y%M%d.%H%m'))
+        )
 
-            t_probs = model.predict_proba(X_holdout)
-            t_auc = sklearn.metrics.roc_auc_score(y_holdout, t_probs)
-
-            print('')
-            print('Epoch %d: auc = %f (best=%f)' % (ep, t_auc, best_auc))
-
-            if t_auc > best_auc:
-                best_auc = t_auc
-                best_iter = ep
-
-                probs = model.predict_proba(X_test)
-
-                out_data = {'y':y_test, 'labels': label_test, 'probs':probs, 'epochs': ep,
-                            'confusion_matrix': sklearn.metrics.confusion_matrix(y_test, probs > .5)}
-
-                print(sklearn.metrics.confusion_matrix(y_test, probs > .5))
-            else:
-                # No longer improving...break and calc statistics
-                if (ep-best_iter) > 2:
-                    break
-
-        final_data.append(out_data)
+        # final_data.append(out_data)
 
     return final_data

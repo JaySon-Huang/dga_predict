@@ -128,7 +128,7 @@ def gen_data(force=False):
         print("Generating malicious dataset...")
         domains, labels = gen_malicious(10000)
 
-        print("Generate benign dataset...")
+        print("Generating benign dataset...")
         if force or not os.path.isfile(ALEXA_1M_LOCAL):
             print("Downloading benign dataset from: {}".format(ALEXA_1M_URL))
             with open(ALEXA_1M_LOCAL, 'wb') as outfile:
@@ -145,5 +145,5 @@ def gen_data(force=False):
 def get_data(force=False):
     """Returns data and labels"""
     gen_data(force)
-
+    print("Loading dataset from {}".format(ALEXA_1M_LOCAL))
     return pickle.load(open(DATA_FILE, 'rb'))

@@ -96,4 +96,4 @@ def calc_macro_roc(fpr, tpr):
     return all_fpr, mean_tpr / len(tpr), auc(all_fpr, mean_tpr) / len(tpr)
 
 if __name__ == "__main__":
-    create_figs(nfolds=1) # Run with 1 to make it fast
+    create_figs(nfolds=1, isbigram=False) # Run with 1 to make it fast
