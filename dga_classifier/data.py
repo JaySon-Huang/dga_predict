@@ -22,16 +22,15 @@ from dga_classifier.dga_generators import banjori, corebot, cryptolocker, \
     dircrypt, kraken, lockyv2, pykspa, qakbot, ramdo, ramnit, simda
 
 # Location of Alexa 1M
-ALEXA_1M = 'http://s3.amazonaws.com/alexa-static/top-1m.csv.zip'
+ALEXA_1M_URL = 'http://s3.amazonaws.com/alexa-static/top-1m.csv.zip'
 ALEXA_1M_LOCAL = 'top-1m.csv.zip'
 # Our ourput file containg all the training data
 DATA_FILE = 'traindata.pkl'
 
-def get_alexa(num, address=ALEXA_1M, filename='top-1m.csv'):
+def get_alexa(num, filename='top-1m.csv'):
     """Grabs Alexa 1M"""
-    url = urlopen(address)
-    zipfile = ZipFile(BytesIO(url.read()))
-    return [tldextract.extract(str(x).split(',')[1]).domain for x in \
+    zipfile = ZipFile(ALEXA_1M_LOCAL)
+    return [tldextract.extract(x.decode().split(',')[1]).domain for x in \
             zipfile.read(filename).split()[:num]]
 
 def gen_malicious(num_per_dga=10000):
@@ -52,7 +51,8 @@ def gen_malicious(num_per_dga=10000):
                      'albuquerque', 'sanfrancisco', 'sandiego', 'losangeles', 'newyork',
                      'atlanta', 'portland', 'seattle', 'washingtondc']
 
-    segs_size = max(1, num_per_dga/len(banjori_seeds))
+    import math
+    segs_size = math.ceil(max(1, num_per_dga/len(banjori_seeds)))
     for banjori_seed in banjori_seeds:
         domains += banjori.generate_domains(segs_size, banjori_seed)
         labels += ['banjori']*segs_size
@@ -62,7 +62,7 @@ def gen_malicious(num_per_dga=10000):
 
     # Create different length domains using cryptolocker
     crypto_lengths = range(8, 32)
-    segs_size = max(1, num_per_dga/len(crypto_lengths))
+    segs_size = math.ceil(max(1, num_per_dga/len(crypto_lengths)))
     for crypto_length in crypto_lengths:
         domains += cryptolocker.generate_domains(segs_size,
                                                  seed_num=random.randint(1, 1000000),
@@ -73,14 +73,14 @@ def gen_malicious(num_per_dga=10000):
     labels += ['dircrypt']*num_per_dga
 
     # generate kraken and divide between configs
-    kraken_to_gen = max(1, num_per_dga/2)
+    kraken_to_gen = math.ceil(max(1, num_per_dga/2))
     domains += kraken.generate_domains(kraken_to_gen, datetime(2016, 1, 1), 'a', 3)
     labels += ['kraken']*kraken_to_gen
     domains += kraken.generate_domains(kraken_to_gen, datetime(2016, 1, 1), 'b', 3)
     labels += ['kraken']*kraken_to_gen
 
     # generate locky and divide between configs
-    locky_gen = max(1, num_per_dga/11)
+    locky_gen = math.ceil(max(1, num_per_dga/11))
     for i in range(1, 12):
         domains += lockyv2.generate_domains(locky_gen, config=i)
         labels += ['locky']*locky_gen
@@ -95,7 +95,7 @@ def gen_malicious(num_per_dga=10000):
 
     # ramdo divided over different lengths
     ramdo_lengths = range(8, 32)
-    segs_size = max(1, num_per_dga/len(ramdo_lengths))
+    segs_size = math.ceil(max(1, num_per_dga/len(ramdo_lengths)))
     for rammdo_length in ramdo_lengths:
         domains += ramdo.generate_domains(segs_size,
                                           seed_num=random.randint(1, 1000000),
@@ -108,14 +108,13 @@ def gen_malicious(num_per_dga=10000):
 
     # simda
     simda_lengths = range(8, 32)
-    segs_size = max(1, num_per_dga/len(simda_lengths))
+    segs_size = math.ceil(max(1, num_per_dga/len(simda_lengths)))
     for simda_length in range(len(simda_lengths)):
         domains += simda.generate_domains(segs_size,
                                           length=simda_length,
                                           tld=None,
                                           base=random.randint(2, 2**32))
         labels += ['simda']*segs_size
-
 
     return domains, labels
 
@@ -125,14 +124,23 @@ def gen_data(force=False):
     force:If true overwrite, else skip if file
           already exists
     """
-    if force or (not os.path.isfile(DATA_FILE)):
+    if force or not os.path.isfile(DATA_FILE):
+        print("Generating malicious dataset...")
         domains, labels = gen_malicious(10000)
 
+        print("Generate benign dataset...")
+        if force or not os.path.isfile(ALEXA_1M_LOCAL):
+            print("Downloading benign dataset from: {}".format(ALEXA_1M_URL))
+            with open(ALEXA_1M_LOCAL, 'wb') as outfile:
+                stream = BytesIO(urlopen(ALEXA_1M_URL).read())
+                outfile.write(stream.read())
+        else:
+            print("Using cache file: {}".format(ALEXA_1M_LOCAL))
         # Get equal number of benign/malicious
         domains += get_alexa(len(domains))
         labels += ['benign']*len(domains)
 
-        pickle.dump(zip(labels, domains), open(DATA_FILE, 'wb'))
+        pickle.dump(list(zip(labels, domains)), open(DATA_FILE, 'wb'))
 
 def get_data(force=False):
     """Returns data and labels"""
