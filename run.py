@@ -20,10 +20,14 @@ def run_experiments(isbigram=True, islstm=True, nfolds=10):
     lstm_results = None
 
     if isbigram:
+        print("Running bigram...")
         bigram_results = bigram.run(nfolds=nfolds)
+        print("====== bigram run finish ======")
 
     if islstm:
+        print("Running lstm...")
         lstm_results = lstm.run(nfolds=nfolds)
+        print("====== lstm run finish ======")
 
     return bigram_results, lstm_results
 
@@ -35,9 +39,9 @@ def create_figs(isbigram=True, islstm=True, nfolds=10, force=False):
 
         results = {'bigram': bigram_results, 'lstm': lstm_results}
 
-        pickle.dump(results, open(RESULT_FILE, 'w'))
+        pickle.dump(results, open(RESULT_FILE, 'wb'))
     else:
-        results = pickle.load(open(RESULT_FILE))
+        results = pickle.load(open(RESULT_FILE, 'rb'))
 
     # Extract and calculate bigram ROC
     if results['bigram']:

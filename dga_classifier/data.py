@@ -1,10 +1,19 @@
 """Generates data for train/test algorithms"""
 from datetime import datetime
-from StringIO import StringIO
-from urllib import urlopen
+try:
+    from StringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+try:
+    from urllib import urlopen
+except ImportError:
+    from urllib.request import urlopen
 from zipfile import ZipFile
 
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 import os
 import random
 import tldextract
@@ -14,15 +23,15 @@ from dga_classifier.dga_generators import banjori, corebot, cryptolocker, \
 
 # Location of Alexa 1M
 ALEXA_1M = 'http://s3.amazonaws.com/alexa-static/top-1m.csv.zip'
-
+ALEXA_1M_LOCAL = 'top-1m.csv.zip'
 # Our ourput file containg all the training data
 DATA_FILE = 'traindata.pkl'
 
 def get_alexa(num, address=ALEXA_1M, filename='top-1m.csv'):
     """Grabs Alexa 1M"""
     url = urlopen(address)
-    zipfile = ZipFile(StringIO(url.read()))
-    return [tldextract.extract(x.split(',')[1]).domain for x in \
+    zipfile = ZipFile(BytesIO(url.read()))
+    return [tldextract.extract(str(x).split(',')[1]).domain for x in \
             zipfile.read(filename).split()[:num]]
 
 def gen_malicious(num_per_dga=10000):
@@ -123,10 +132,10 @@ def gen_data(force=False):
         domains += get_alexa(len(domains))
         labels += ['benign']*len(domains)
 
-        pickle.dump(zip(labels, domains), open(DATA_FILE, 'w'))
+        pickle.dump(zip(labels, domains), open(DATA_FILE, 'wb'))
 
 def get_data(force=False):
     """Returns data and labels"""
     gen_data(force)
 
-    return pickle.load(open(DATA_FILE))
+    return pickle.load(open(DATA_FILE, 'rb'))
