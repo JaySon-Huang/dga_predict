@@ -72,5 +72,5 @@ def run(max_epoch=25, nfolds=10, batch_size=128):
 
         import datetime
         model.save('lstm.{}.h5'.format(
-            datetime.datetime.now().strftime('%Y%M%d.%H%m'))
+            datetime.datetime.now().strftime('%Y%m%d.%H%M'))
         )
