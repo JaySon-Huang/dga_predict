@@ -17,3 +17,6 @@ be much faster).
 We have 11 DGA algorithms in our repo.  Some are from the https://github.com/baderj/domain_generation_algorithms
 repo.  We noted these in each file and kept the same GNU license.  However, we made some small edits
 such as allowing for no TLD and varying the size for some algorithms.  
+
+### Add DGA Algorithms from 360netlab/DGA
+https://github.com/360netlab/DGA
