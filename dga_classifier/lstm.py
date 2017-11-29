@@ -10,7 +10,7 @@ from keras.layers.core import Dense, Dropout, Activation
 from keras.layers.embeddings import Embedding
 from keras.layers.recurrent import LSTM
 import sklearn
-from sklearn.cross_validation import train_test_split
+from sklearn.model_selection import train_test_split
 
 
 def build_model(max_features, maxlen):
