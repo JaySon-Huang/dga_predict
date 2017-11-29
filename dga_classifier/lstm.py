@@ -23,7 +23,8 @@ def build_model(max_features, maxlen):
     model.add(Activation('sigmoid'))
 
     model.compile(loss='binary_crossentropy',
-                  optimizer='rmsprop')
+                  optimizer='rmsprop',
+                  metrics=['accuracy'])
 
     return model
 
@@ -48,25 +49,22 @@ def run(max_epoch=25, nfolds=10, batch_size=128):
     # Convert labels to 0-1
     y = [0 if x == 'benign' else 1 for x in labels]
 
-    final_data = []
-
     for fold in range(nfolds):
-        print("fold %u/%u" % (fold+1, nfolds))
+        print("Fold %u/%u" % (fold+1, nfolds))
         X_train, X_test, y_train, y_test, _, label_test = train_test_split(X, y, labels, test_size=0.2)
 
         print('Build model...')
         model = build_model(max_features, maxlen)
 
         print("Train...")
-        X_train, X_holdout, y_train, y_holdout = train_test_split(X_train, y_train, test_size=0.05)
         model.fit(
             X_train, y_train,
             batch_size=batch_size,
             epochs=max_epoch,
-            validation_data=(X_holdout, y_holdout)
+            validation_data=(X_test, y_test)
         )
         score, acc = model.evaluate(
-            X_holdout, y_holdout,
+            X_test, y_test,
             batch_size=batch_size
         )
         print('Test score:', score)
@@ -76,7 +74,3 @@ def run(max_epoch=25, nfolds=10, batch_size=128):
         model.save('lstm.{}.h5'.format(
             datetime.datetime.now().strftime('%Y%M%d.%H%m'))
         )
-
-        # final_data.append(out_data)
-
-    return final_data
