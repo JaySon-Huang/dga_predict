@@ -9,6 +9,7 @@ from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
 from keras.layers.embeddings import Embedding
 from keras.layers.recurrent import LSTM
+from keras.callbacks import EarlyStopping, ModelCheckpoint
 import sklearn
 from sklearn.model_selection import train_test_split
 
@@ -17,7 +18,7 @@ def build_model(max_features, maxlen):
     """Build LSTM model"""
     model = Sequential()
     model.add(Embedding(max_features, 128, input_length=maxlen))
-    model.add(LSTM(128))
+    model.add(LSTM(128, dropout=0.5, recurrent_dropout=0.5))
     model.add(Dropout(0.5))
     model.add(Dense(1))
     model.add(Activation('sigmoid'))
@@ -57,11 +58,18 @@ def run(max_epoch=25, nfolds=10, batch_size=128):
         model = build_model(max_features, maxlen)
 
         print("Train...")
+        checkpoint = ModelCheckpoint(
+            filepath='lstm.{epoch:02d}-{val_acc:.2f}.h5',
+            verbose=1, save_best_only=True
+        )
+        early_stop = EarlyStopping(monitor='val_loss', patience=2, verbose=0, mode='auto')
         model.fit(
             X_train, y_train,
             batch_size=batch_size,
             epochs=max_epoch,
-            validation_data=(X_test, y_test)
+            validation_data=(X_test, y_test),
+            shuffle=True,
+            callbacks=[checkpoint, early_stop]
         )
         score, acc = model.evaluate(
             X_test, y_test,
